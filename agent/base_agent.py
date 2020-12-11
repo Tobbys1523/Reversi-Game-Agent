@@ -2,6 +2,8 @@ import random
 import pygame
 import sys
 from pygame.constants import MOUSEBUTTONDOWN, MOUSEMOTION
+from reversi import Reversi
+import time
 
 class BaseAgent():
     def __init__(self, color = "black", rows_n = 8, cols_n = 8, width = 600, height = 600):
@@ -58,13 +60,113 @@ class HumanAgent(BaseAgent):
         return (-1, -1), None
 
 
+
+class RandomAgent(BaseAgent):
+    #改成從可下步伐中隨機抽出
+    def step(self, reward, obs):
+        move = []
+        for i in range(64):
+            can = self.can_place(obs,i,self.color)
+            if can ==True:
+                move.append(i)
+        p = random.randint(0,len(move)-1)
+        return (self.col_offset + (move[p]%8) * self.block_len, self.row_offset + (move[p]//8) * self.block_len), pygame.USEREVENT
+
+    
+    def can_place(self,obs,place,color):
+        '''
+        確認周遭九宮格中是否有敵手的旗子
+
+        Parameter
+        ------------------------
+        obs : dict
+        棋盤戰況
+
+        place : int
+        要測試是否能放的點
+
+        color : str
+        我方顏色
+
+        '''
+        if obs[place]!=0:
+            return False
+        #print(obs)
+        x=place%8
+        y=place//8
+        sc=1
+        if color == 'black': 
+            sc = -1
+        is_avail = False
+        for i in range(-1, 2):
+            if x+i < 0 or x+i > 7: continue
+            for j in range(-1, 2):
+                if y+j < 0 or y+j > 7: continue
+                if obs[x+i+(y+j)*8] == -1 * sc:
+                    if self.check_direction(x, y, i, j,obs,sc):
+                        is_avail = True
+        return is_avail
+    
+    def check_direction(self,row,col,dx,dy,obs,sc):
+        '''
+        測試輸入點在輸入方向是否有我方旗子一同夾住敵手旗子
+
+        Parameter
+        ------------------------
+        row : int
+        測試點x軸
+
+        col : int
+        測試點y軸
+
+        dx : int
+        測試方向x分量
+
+        dy : int
+        測試方向y分量
+
+        obs : dict
+        棋盤戰況
+
+        sc : int 
+        我方顏色代碼
+        -1 : black
+         1 : white
+        '''
+        is_avail = False
+        x, y = [dx], [dy]
+        while 0 <= row+x[-1] < 8 and 0 <= col+y[-1] < 8:
+            label = row+x[-1]+8*(col+y[-1])
+            if obs[label]==0:
+                break
+            if obs[label] == sc:
+                return True
+            x.append(x[-1] + dx)
+            y.append(y[-1] + dy)
+        return is_avail
+
+
+'''
+-------------------------------------------------------
+old random write by TA
+-------------------------------------------------------
 class RandomAgent(BaseAgent):
     def step(self, reward, obs):
-        """
-        """
+        
         return (self.col_offset + random.randint(0, self.cols_n-1) * self.block_len, self.row_offset + random.randint(0, self.rows_n-1) * self.block_len), pygame.USEREVENT
+   '''     
+class MyAgent(BaseAgent):
+    def step(self, reward, obs):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEMOTION:
+                return event.pos, event.type
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                return event.pos, pygame.USEREVENT
 
-
+        return (-1, -1), None
 if __name__ == "__main__":
     agent = RandomAgent()
     print(agent.step(None, None))
