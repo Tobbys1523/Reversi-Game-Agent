@@ -91,7 +91,6 @@ class RandomAgent(BaseAgent):
         '''
         if obs[place]!=0:
             return False
-        #print(obs)
         x=place%8
         y=place//8
         sc=1
@@ -107,7 +106,7 @@ class RandomAgent(BaseAgent):
                         is_avail = True
         return is_avail
     
-    def check_direction(self,row,col,dx,dy,obs,sc):
+    def check_direction(self,row,col,dx,dy,obs,sc,flip=False):
         '''
         測試輸入點在輸入方向是否有我方旗子一同夾住敵手旗子
 
@@ -157,16 +156,130 @@ class RandomAgent(BaseAgent):
    '''     
 class MyAgent(BaseAgent):
     def step(self, reward, obs):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEMOTION:
-                return event.pos, event.type
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                return event.pos, pygame.USEREVENT
+        move = []
+        k={}
+        sc,maxi,maxii = 1,0,0
+        if self.color == 'black': 
+            sc = -1
+        for i in range(64):
+            can = self.can_place(obs,i,sc)
+            if can ==True:
+                move.append(i)
+        for i in move:
+            k = self.flip_or_not(i%8,i//8,obs,sc)
+            ans = self.how_many(k,sc)
+            if ans>maxi:
+                maxi=ans
+                maxii=i
+        return (self.col_offset + (maxii%8) * self.block_len, self.row_offset + (maxii//8) * self.block_len), pygame.USEREVENT
 
-        return (-1, -1), None
+    def flip_or_not(self,x,y,obs,sc):
+        ans = obs.copy()
+        for i in range(-1, 2):
+            if x+i < 0 or x+i > 7: continue
+            for j in range(-1, 2):
+                if y+j < 0 or y+j > 7: continue
+                if obs[x+i+(y+j)*8] == -1 * sc:
+                    ans = self.flip_it(x, y, i, j,ans,sc)
+        return ans
+                        
+        
+    def can_place(self,obs,place,sc):
+        '''
+        確認周遭九宮格中是否有敵手的旗子
+
+        Parameter
+        ------------------------
+        obs : dict
+        棋盤戰況
+
+        place : int
+        要測試是否能放的點
+
+        color : str
+        我方顏色
+
+        '''
+        if obs[place]!=0:
+            return False
+        x=place%8
+        y=place//8
+        is_avail = False
+        for i in range(-1, 2):
+            if x+i < 0 or x+i > 7: continue
+            for j in range(-1, 2):
+                if y+j < 0 or y+j > 7: continue
+                if obs[x+i+(y+j)*8] == -1 * sc:
+                    if self.check_direction(x, y, i, j,obs,sc):
+                        is_avail = True
+        return is_avail
+    
+    def check_direction(self,row,col,dx,dy,obs,sc,flip=False):
+        '''
+        測試輸入點在輸入方向是否有我方旗子一同夾住敵手旗子
+
+        Parameter
+        ------------------------
+        row : int
+        測試點x軸
+
+        col : int
+        測試點y軸
+
+        dx : int
+        測試方向x分量
+
+        dy : int
+        測試方向y分量
+
+        obs : dict
+        棋盤戰況
+
+        sc : int 
+        我方顏色代碼
+        -1 : black
+         1 : white
+        '''
+        is_avail = False
+        x, y = [dx], [dy]
+        while 0 <= row+x[-1] < 8 and 0 <= col+y[-1] < 8:
+            label = row+x[-1]+8*(col+y[-1])
+            if obs[label]==0:
+                break
+            if obs[label] == sc:
+                if flip:
+                    ans = obs.copy()
+                    for r, c in zip(x, y):
+                        ans[row+r+8*(col+c)]=sc
+                    return ans
+                return True
+            x.append(x[-1] + dx)
+            y.append(y[-1] + dy)
+        return is_avail
+
+    def how_many(self,want,sc):
+        k=0
+        for i in range(64):
+            if want[i]==sc:
+                k+=1
+        return k
+
+    def flip_it(self,row,col,dx,dy,obs,sc):
+
+        ans = obs.copy()
+        x, y = [dx], [dy]
+        while 0 <= row+x[-1] < 8 and 0 <= col+y[-1] < 8:
+            label = row+x[-1]+8*(col+y[-1])
+            if obs[label]==0:
+                break
+            if obs[label] == sc:
+                for r, c in zip(x, y):
+                    ans[row+r+8*(col+c)]=sc
+                return ans
+            x.append(x[-1] + dx)
+            y.append(y[-1] + dy)
+        return ans
+
 if __name__ == "__main__":
     agent = RandomAgent()
     print(agent.step(None, None))
