@@ -59,8 +59,6 @@ class HumanAgent(BaseAgent):
 
         return (-1, -1), None
 
-
-
 class RandomAgent(BaseAgent):
     #改成從可下步伐中隨機抽出
     def step(self, reward, obs):
@@ -74,6 +72,7 @@ class RandomAgent(BaseAgent):
 
     
     def can_place(self,obs,place,color):
+
         '''
         確認周遭九宮格中是否有敵手的旗子
 
@@ -87,8 +86,8 @@ class RandomAgent(BaseAgent):
 
         color : str
         我方顏色
-
         '''
+
         if obs[place]!=0:
             return False
         x=place%8
@@ -107,7 +106,7 @@ class RandomAgent(BaseAgent):
         return is_avail
     
     def check_direction(self,row,col,dx,dy,obs,sc,flip=False):
-        '''
+        '''    
         測試輸入點在輸入方向是否有我方旗子一同夾住敵手旗子
 
         Parameter
@@ -130,8 +129,9 @@ class RandomAgent(BaseAgent):
         sc : int 
         我方顏色代碼
         -1 : black
-         1 : white
-        '''
+        1 : white
+
+       ''' 
         is_avail = False
         x, y = [dx], [dy]
         while 0 <= row+x[-1] < 8 and 0 <= col+y[-1] < 8:
@@ -146,18 +146,19 @@ class RandomAgent(BaseAgent):
 
 
 '''
--------------------------------------------------------
-old random write by TA
--------------------------------------------------------
+#-------------------------------------------------------
+#old random written by TA
+#-------------------------------------------------------
+
 class RandomAgent(BaseAgent):
     def step(self, reward, obs):
         
         return (self.col_offset + random.randint(0, self.cols_n-1) * self.block_len, self.row_offset + random.randint(0, self.rows_n-1) * self.block_len), pygame.USEREVENT
-   '''     
+     '''
+
 class MyAgent(BaseAgent):
     def step(self, reward, obs):
         move = []
-        k={}
         sc,maxi,maxii = 1,0,0
         if self.color == 'black': 
             sc = -1
@@ -171,10 +172,15 @@ class MyAgent(BaseAgent):
             if ans>maxi:
                 maxi=ans
                 maxii=i
+            if ans==maxi and random.randint(0,1)==1:
+                maxi=ans
+                maxii=i
+
         return (self.col_offset + (maxii%8) * self.block_len, self.row_offset + (maxii//8) * self.block_len), pygame.USEREVENT
 
     def flip_or_not(self,x,y,obs,sc):
         ans = obs.copy()
+        ans[x+8*y] = sc
         for i in range(-1, 2):
             if x+i < 0 or x+i > 7: continue
             for j in range(-1, 2):
@@ -182,8 +188,7 @@ class MyAgent(BaseAgent):
                 if obs[x+i+(y+j)*8] == -1 * sc:
                     ans = self.flip_it(x, y, i, j,ans,sc)
         return ans
-                        
-        
+                              
     def can_place(self,obs,place,sc):
         '''
         確認周遭九宮格中是否有敵手的旗子
@@ -265,7 +270,6 @@ class MyAgent(BaseAgent):
         return k
 
     def flip_it(self,row,col,dx,dy,obs,sc):
-
         ans = obs.copy()
         x, y = [dx], [dy]
         while 0 <= row+x[-1] < 8 and 0 <= col+y[-1] < 8:
@@ -275,10 +279,148 @@ class MyAgent(BaseAgent):
             if obs[label] == sc:
                 for r, c in zip(x, y):
                     ans[row+r+8*(col+c)]=sc
+                '''
+                print('\nrow = ',row,'  col = ',col,'\n')
+                for i in range(8):
+                    print(ans[i*8],ans[i*8+1],ans[i*8+2],ans[i*8+3],ans[i*8+4],ans[i*8+5],ans[i*8+6],ans[i*8+7],sep = '  ')
+                print('\n')
+                for i in range(8):
+                    print(obs[i*8],obs[i*8+1],obs[i*8+2],obs[i*8+3],obs[i*8+4],obs[i*8+5],obs[i*8+6],obs[i*8+7],sep = '  ')
+                print('\n')
+                '''
                 return ans
             x.append(x[-1] + dx)
             y.append(y[-1] + dy)
         return ans
+
+class MyAgent_2(MyAgent):
+    def step(self, reward, obs):
+        move = []
+        reval_move=[]
+        k={}
+        sc,maxi,maxii = 1,100,0
+        if self.color == 'black': 
+            sc = -1
+        for i in range(64):
+            can = self.can_place(obs,i,sc)
+            if can ==True:
+                move.append(i)
+        for i in move:
+            k = self.flip_or_not(i%8,i//8,obs,sc)
+            reval_move=[]
+            for n in range(64):
+                reval_place = self.can_place(k,n,sc*(-1))
+                if reval_place:
+                    reval_move.append(n)
+            if len(reval_move) < maxi:
+                maxi = len(reval_move)
+                maxii = i
+            if len(reval_move)==maxi and random.randint(0,1)==1:
+                maxi = len(reval_move)
+                maxii = i
+        return (self.col_offset + (maxii%8) * self.block_len, self.row_offset + (maxii//8) * self.block_len), pygame.USEREVENT
+
+class MyAgent_3(MyAgent):
+    def step(self, reward, obs):
+        move = []
+        reval_move=[]
+        k={}
+        sc,maxi,maxii = 1,0,0
+        comp=[]
+        if self.color == 'black': 
+            sc = -1
+        for i in range(64):
+            can = self.can_place(obs,i,sc)
+            if can ==True:
+                move.append(i)
+        for i in move:
+            k = self.flip_or_not(i%8,i//8,obs,sc)
+            reval_move=[]
+            for n in range(64):
+                reval_place = self.can_place(k,n,sc*(-1))
+                if reval_place:
+                    reval_move.append(n)
+            for l in reval_move:
+                k = self.flip_or_not(l%8,l//8,k,sc*(-1))
+                cout = self.how_many(k,sc*(-1))
+                if cout>maxi:
+                    maxi = cout
+                if cout == maxi and random.randint(0,1)==1:
+                    maxi = cout
+            comp.append(maxi)
+        haha = min(comp)
+        n=0
+        for i in comp:
+            if i == haha:
+                lll = n
+            n+=1
+        maxii = move[lll]
+        return (self.col_offset + (maxii%8) * self.block_len, self.row_offset + (maxii//8) * self.block_len), pygame.USEREVENT
+
+class MyAgent_4(MyAgent):
+    def step(self, reward, obs):
+        sc = 1
+        move_list,areas_list,steep_list = [],[],[]
+        if self.color == 'black': 
+            sc = -1
+        move=[]
+        
+        for i in [0,7,63,56]:
+            can = self.can_place(obs,i,sc)
+            if can :
+                move.append(i)
+        if move!=[]:
+            anss = move[random.randint(0,len(move)-1)]
+            return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
+        
+        ido,ans= self.dfs_find(obs,sc,0,4,[],move_list,areas_list,steep_list)
+        anss = ans[0]
+        return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
+
+    def dfs_find(self,obs,sc,time,n,step,move_list,areas_list,steep_list):
+        color_now = 1
+        if self.color == 'black':
+            color_now = -1
+        if time==n:
+            area = self.how_many(obs,sc*(-1))
+            return area,step.copy()
+
+        areas,steeps,move = [],[],[]
+
+        for i in range(64):
+            can = self.can_place(obs,i,sc)
+            if can:
+                move.append(i)
+        move_list.append(move)
+
+        #for i in range(8):
+            #print('%3d%3d%3d%3d%3d%3d%3d%3d'%(obs[i*8],obs[i*8+1],obs[i*8+2],obs[i*8+3],obs[i*8+4],obs[i*8+5],obs[i*8+6],obs[i*8+7]))
+        if sc == color_now and move==[]:
+            return -1,step.copy()
+        elif sc == color_now*(-1) and move==[] :
+            return 100,step.copy()
+        for i in move_list[-1]:
+            k = self.flip_or_not(i%8,i//8,obs,sc)
+            step.append(i)
+            area,steep = self.dfs_find(k,sc*(-1),time+1,n,step,move_list,areas_list,steep_list)
+            #print(area,'    ',steep,'    time = ',time)
+            step.pop(-1)
+            areas.append(area)
+            steeps.append(steep)
+
+        if sc == color_now:
+            smallest_area = min(areas)
+        else :
+            smallest_area = max(areas)
+        n=0
+        ns = []
+        for i in areas:
+            if i == smallest_area:
+                ns.append(n)
+            n+=1
+        
+        return smallest_area,steeps[random.randint(0,len(ns)-1)]
+
 
 if __name__ == "__main__":
     agent = RandomAgent()
