@@ -159,27 +159,24 @@ class RandomAgent(BaseAgent):
 class MyAgent(BaseAgent):
     
     def weight(self,place,sc,obs):
-        heavy = [20,-3,11, 8, 8,11,-3,20,
-                 -3,-7,-4, 1, 1,-4,-7,-3,
-                 11,-4, 2, 2, 2, 2,-4,11,
-                 8,1, 2,-3,-3, 2, 1, 8 ,
-                 8,1, 2,-3,-3, 2, 1, 8,
-                 11,-4, 2, 2, 2, 2,-4,11 ,
-                 -3,-7,-4, 1, 1,-4,-7,-3 ,
-                 20,-3,11, 8, 8,11,-3,20,
+        heavy = [2000,-300,11,8,8,11,-300,2000,
+                 -300,-700,1,1,1,1,-700,-300,
+                 11,1,1,1,1,1,1,11,
+                 8,1,1,1,1,1,1,8 ,
+                 8,1,1,1,1, 1,1,8,
+                 11,1,1,1,1,1,1,11 ,
+                 -300,-700,1, 1, 1,1,-700,-300 ,
+                 2000,-300,11, 8, 8,11,-300,2000,
                 ]
         '''
         haha = 0
-        for i in range(8):
-            for k in range(8):
-                if obs[i+8*k]==sc:
-                    haha+=1+heavy[i+8*k]
+        for i in [1,6,8,9,14,15,62,54,55,57,48,49]:
+            if place==i and obs[0]==sc or obs[7]==sc or obs[63]==sc or obs[56]==sc:
+                haha+=1
+        if haha!=0:
+            return -heavy[place]
         '''
-        if obs[place]==sc:
-            return heavy[place]
-        elif obs[place]==(-1)*sc:
-            return heavy[place]*(-1)
-        else: return 0
+        return heavy[place]
     
     def step(self, reward, obs):
         move = []
@@ -457,8 +454,7 @@ class MyAgent_4(MyAgent):
         
         return smallest_area,steeps[random.randint(0,len(ns)-1)]
 
-
-class MyAgent_0(MyAgent_4):
+class MyAgent_0(MyAgent):
     def step(self,reward,obs):
         move = []
         sc = 1
@@ -466,20 +462,93 @@ class MyAgent_0(MyAgent_4):
             sc = -1
         for i in [0,7,63,56]:
             can = self.can_place(obs,i,sc)
-            if can :
+            if can:
                 move.append(i)
         if move!=[]:
             anss = move[random.randint(0,len(move)-1)]
             return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
-
+        move = []
         for i in range(64):
-            can = self.can_place(obs,i,self.color)
-            if can ==True:
+            can = self.can_place(obs,i,sc)
+            if can:
                 move.append(i)
         p = random.randint(0,len(move)-1)
         return (self.col_offset + (move[p]%8) * self.block_len, self.row_offset + (move[p]//8) * self.block_len), pygame.USEREVENT
             
 
+class MyAgent_5(MyAgent):
+    def step(self, reward, obs):
+        sc = 1
+        move_list,areas_list,steep_list = [],[],[]
+        if self.color == 'black': 
+            sc = -1
+        move=[]
+        steeeps = 0
+
+        if move!=[]:
+            anss = move[random.randint(0,len(move)-1)]
+            return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
+
+        for i in range(64):
+            if obs[i]==0:
+                steeeps+=1
+        
+        ido,ans= self.dfs_find(obs,sc,0,2,[],move_list,areas_list,steep_list,steeeps)
+        anss = ans[0]
+
+        return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
+
+    def dfs_find(self,obs,sc,time,n,step,move_list,areas_list,steep_list,steeeps):
+        color_now = 1
+        if self.color == 'black':
+            color_now = -1
+            
+        if time==n:
+            area = []
+            if steeeps>15:
+                for i in range(64):
+                    can = self.can_place(obs,i,sc)
+                    if can:
+                        area.append(i)
+                heavy = self.weight(step[0],-1,obs)
+                return len(area)+heavy,step.copy()
+            else:
+                area = self.how_many(obs,-1)
+                return area , step.copy()
+            
+        areas,steeps,move = [],[],[]
+
+        for i in range(64):
+            can = self.can_place(obs,i,sc)
+            if can:
+                move.append(i)
+        move_list.append(move)
+
+        if sc == color_now and move==[]:
+            return -1,step.copy()
+        elif sc == color_now*(-1) and move==[] :
+            return 100,step.copy()
+        
+        for i in move_list[-1]:
+            k = self.flip_or_not(i%8,i//8,obs,sc)
+            step.append(i)
+            area,steep = self.dfs_find(k,sc*(-1),time+1,n,step,move_list,areas_list,steep_list,steeeps)
+            step.pop(-1)
+            areas.append(area)
+            steeps.append(steep)
+
+        if sc == color_now :
+            smallest_area = min(areas)
+        else :
+            smallest_area = max(areas)
+        n=0
+        ns = []
+        for i in areas:
+            if i == smallest_area:
+                ns.append(n)
+            n+=1
+        
+        return smallest_area,steeps[random.randint(0,len(ns)-1)]
 
 if __name__ == "__main__":
     agent = RandomAgent()
