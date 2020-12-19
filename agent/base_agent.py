@@ -385,6 +385,8 @@ class MyAgent_4(MyAgent):
     def step(self, reward, obs):
         sc = 1
         move_list,areas_list,steep_list = [],[],[]
+        bad_move = [1,6,8,9,14,15,48,49,54,55,57,62]
+        good_move = [2,3,4,5,16,23,24,31,32,39,40,47,58,59,60,61]
         if self.color == 'black': 
             sc = -1
         move=[]
@@ -396,18 +398,38 @@ class MyAgent_4(MyAgent):
                 move.append(i)
         if move!=[]:
             anss = move[random.randint(0,len(move)-1)]
+            if anss == 0:
+                for i in [1,8,9]:
+                    bad_move.remove(i)
+                for i in [1,8]:
+                    good_move.append(i)
+            elif anss == 7:
+                for i in [6,14,15]:
+                    bad_move.remove(i)
+                for i in [6,15]:
+                    good_move.append(i)
+            elif anss == 56:
+                for i in [48,49,57]:
+                    bad_move.remove(i)
+                for i in [48,57]:
+                    good_move.append(i)
+            else:
+                for i in [54,55,62]:
+                    bad_move.remove(i)
+                for i in [55,62]:
+                    good_move.append(i)
             return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
 
         for i in range(64):
             if obs[i]==0:
                 steeeps+=1
         
-        ido,ans= self.dfs_find(obs,sc,0,2,[],move_list,areas_list,steep_list,steeeps)
+        ido,ans= self.dfs_find(obs,sc,0,2,[],move_list,areas_list,steep_list,steeeps, good_move, bad_move)
         anss = ans[0]
 
         return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
 
-    def dfs_find(self,obs,sc,time,n,step,move_list,areas_list,steep_list,steeeps):
+    def dfs_find(self,obs,sc,time,n,step,move_list,areas_list,steep_list,steeeps, good_move, bad_move):
         color_now = 1
         if self.color == 'black':
             color_now = -1
@@ -426,9 +448,24 @@ class MyAgent_4(MyAgent):
         areas,steeps,move = [],[],[]
 
         for i in range(64):
-            can = self.can_place(obs,i,sc)
-            if can:
-                move.append(i)
+            if color_now == sc:
+                can = self.can_place(obs,i,sc)
+                if can and i in good_move:
+                    move.append(i)
+            else:
+                can = self.can_place(obs,i,sc)
+                if can:
+                    move.append(i)
+        if move == []:
+            for i in range(64):
+                can = self.can_place(obs,i,sc)
+                if can and i not in bad_move:
+                     move.append(i)
+        if move == []:
+            for i in range(64):
+                can = self.can_place(obs,i,sc)
+                if can:
+                     move.append(i)
         move_list.append(move)
 
         if sc == color_now and move==[]:
@@ -439,7 +476,7 @@ class MyAgent_4(MyAgent):
         for i in move_list[-1]:
             k = self.flip_or_not(i%8,i//8,obs,sc)
             step.append(i)
-            area,steep = self.dfs_find(k,sc*(-1),time+1,n,step,move_list,areas_list,steep_list,steeeps)
+            area,steep = self.dfs_find(k,sc*(-1),time+1,n,step,move_list,areas_list,steep_list,steeeps, good_move, bad_move)
             step.pop(-1)
             areas.append(area)
             steeps.append(steep)
@@ -473,7 +510,7 @@ class MyAgent_0(MyAgent_4):
             return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
 
         for i in range(64):
-            can = self.can_place(obs,i,self.color)
+            can = self.can_place(obs,i,sc)
             if can ==True:
                 move.append(i)
         p = random.randint(0,len(move)-1)
