@@ -157,30 +157,6 @@ class RandomAgent(BaseAgent):
      '''
 
 class MyAgent(BaseAgent):
-    
-    def weight(self,place,sc,obs):
-        heavy = [20,-3,11, 8, 8,11,-3,20,
-                 -3,-7,-4, 1, 1,-4,-7,-3,
-                 11,-4, 2, 2, 2, 2,-4,11,
-                 8,1, 2,-3,-3, 2, 1, 8 ,
-                 8,1, 2,-3,-3, 2, 1, 8,
-                 11,-4, 2, 2, 2, 2,-4,11 ,
-                 -3,-7,-4, 1, 1,-4,-7,-3 ,
-                 20,-3,11, 8, 8,11,-3,20,
-                ]
-        '''
-        haha = 0
-        for i in range(8):
-            for k in range(8):
-                if obs[i+8*k]==sc:
-                    haha+=1+heavy[i+8*k]
-        '''
-        if obs[place]==sc:
-            return heavy[place]
-        elif obs[place]==(-1)*sc:
-            return heavy[place]*(-1)
-        else: return 0
-    
     def step(self, reward, obs):
         move = []
         sc,maxi,maxii = 1,0,0
@@ -382,7 +358,7 @@ class MyAgent_3(MyAgent):
         return (self.col_offset + (maxii%8) * self.block_len, self.row_offset + (maxii//8) * self.block_len), pygame.USEREVENT
 
 class MyAgent_4(MyAgent):
-    def step(self, reward, obs):
+    def step(self, reward, obs):#4
         sc = 1
         move_list,areas_list,steep_list = [],[],[]
         bad_move = [1,6,8,9,14,15,48,49,54,55,57,62]
@@ -424,7 +400,7 @@ class MyAgent_4(MyAgent):
             if obs[i]==0:
                 steeeps+=1
         
-        ido,ans= self.dfs_find(obs,sc,0,2,[],move_list,areas_list,steep_list,steeeps, good_move, bad_move)
+        ido,ans= self.dfs_find(obs,sc,0,4,[],move_list,areas_list,steep_list,steeeps, good_move, bad_move)
         anss = ans[0]
 
         return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
@@ -442,7 +418,7 @@ class MyAgent_4(MyAgent):
                         area.append(i)
                 return len(area),step.copy()
             else:
-                area = self.how_many(obs,-1)
+                area = self.how_many(obs,color_now)
                 return area , step.copy()
             
         areas,steeps,move = [],[],[]
@@ -494,7 +470,6 @@ class MyAgent_4(MyAgent):
         
         return smallest_area,steeps[random.randint(0,len(ns)-1)]
 
-
 class MyAgent_0(MyAgent_4):
     def step(self,reward,obs):
         move = []
@@ -517,6 +492,161 @@ class MyAgent_0(MyAgent_4):
         return (self.col_offset + (move[p]%8) * self.block_len, self.row_offset + (move[p]//8) * self.block_len), pygame.USEREVENT
             
 
+class MyAgent_5(MyAgent):
+    def step(self, reward, obs):
+        move_list,areas_list,steep_list = [],[],[]
+        sc = 1
+        if self.color == 'black': 
+            sc = -1
+
+        steeeps = 0
+        for i in range(64):
+            if obs[i]==0:
+                steeeps+=1
+        
+        ido,ans,hhh= self.dfs_find(obs,sc,0,2,[],move_list,areas_list,steep_list,steeeps,)
+        ido+=1
+        hhh+=1
+        anss = ans[0]
+
+        return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
+
+    def dfs_find(self,obs,sc,time,n,step,move_list,areas_list,steep_list,steeeps,):
+        color_now = 1
+        if self.color == 'black':
+            color_now = -1
+        if time==n:
+            area = []
+            if steeeps>15:
+                for i in range(64):
+                    can = self.can_place(obs,i,sc)
+                    if can:
+                        area.append(i)
+                    heavy = self.how_heavy(obs,sc,color_now,step[0])
+                return len(area) ,step.copy(),heavy
+            else:
+                area = self.how_many(obs,-1)
+                heavy = self.how_heavy(obs,sc,color_now,step[0])
+                return area, step.copy() ,heavy
+            
+        areas,steeps,move,heavys = [],[],[],[]
+
+        for i in range(64):
+                can = self.can_place(obs,i,sc)
+                if can :
+                    move.append(i)
+
+        move_list.append(move)
+
+        if sc == color_now and move==[]:
+            heavy = self.how_heavy(obs,sc,color_now,step[0])
+            return -1,step.copy(),heavy
+        elif sc == color_now*(-1) and move==[] :
+            heavy = self.how_heavy(obs,sc,color_now,step[0])
+            return 100,step.copy(),heavy
+        
+        for i in move_list[-1]:
+            k = self.flip_or_not(i%8,i//8,obs,sc)
+            step.append(i)
+            area, steep, heavy = self.dfs_find(k,sc*(-1),time+1,n,step,move_list,areas_list,steep_list,steeeps, )
+            step.pop(-1)
+            areas.append(area)
+            heavys.append(heavy)
+            steeps.append(steep)
+
+        n,t=0,0
+        ts = []
+        for i in heavys:
+            if i == max(heavys):
+                ts.append(t)
+            t+=1
+        maxi=ts[0]
+        maxii=areas[0]
+        if len(ts)>1:
+            if sc == color_now :
+                for i in ts:
+                    if areas[i] < maxii:
+                        maxi = i 
+                        maxii = areas[i]
+                    if areas[i]==maxii and random.randint(0,1)==1:
+                        maxi = i
+            else :
+                for i in ts:
+                    if areas[i] > maxii:
+                        maxi = i
+                        maxii = areas[i]
+                    if areas[i]==maxii and random.randint(0,1)==1:
+                        maxi = i
+        return areas[maxi],steeps[maxi],heavys[maxi]
+
+    def how_heavy(self,obs,sc,color_now,place):
+        weight=[
+            200,-200,100,100,100,100,-200,200,
+            -200,-200,1,1,1,1,-200,-200,
+            100,1,1,1,1,1,1,100,
+            100,1,1,1,1,1,1,100,
+            100,1,1,1,1,1,1,100,
+            100,1,1,1,1,1,1,100,
+            -200,-200,1,1,1,1,-200,-200,
+            200,-200,100,100,100,100,-200,200,
+        ]
+        if obs[0]==color_now:
+            weight[1]=200
+            weight[8]=200
+        if obs[7]==color_now:
+            weight[6]=200
+            weight[15]=200
+        if obs[56]==color_now:
+            weight[57]=200
+            weight[46]=200
+        if obs[63]==color_now:
+            weight[62]=200
+            weight[55]=200
+
+        return weight[place]    
+
+class MyAgent_6_heavy(MyAgent_4):
+    def step(self, reward, obs):
+        sc = 1
+        bad_move = [1,6,8,9,14,15,48,49,54,55,57,62]
+        good_move = [2,3,4,5,16,23,24,31,32,39,40,47,58,59,60,61]
+        if self.color == 'black': 
+            sc = -1
+        move=[]
+        for i in [0,7,63,56]:
+            can = self.can_place(obs,i,sc)
+            if can :
+                move.append(i)
+        if move!=[]:
+            anss = move[random.randint(0,len(move)-1)]
+            if anss == 0:
+                for i in [1,8,9]:
+                    bad_move.remove(i)
+                for i in [1,8]:
+                    good_move.append(i)
+            elif anss == 7:
+                for i in [6,14,15]:
+                    bad_move.remove(i)
+                for i in [6,15]:
+                    good_move.append(i)
+            elif anss == 56:
+                for i in [48,49,57]:
+                    bad_move.remove(i)
+                for i in [48,57]:
+                    good_move.append(i)
+            else:
+                for i in [54,55,62]:
+                    bad_move.remove(i)
+                for i in [55,62]:
+                    good_move.append(i)
+            return (self.col_offset + (anss%8) * self.block_len, self.row_offset + (anss//8) * self.block_len), pygame.USEREVENT
+
+        for i in range(64):
+            can = self.can_place(obs,i,sc)
+            if can ==True:
+                move.append(i)
+        p = random.randint(0,len(move)-1)
+        return (self.col_offset + (move[p]%8) * self.block_len, self.row_offset + (move[p]//8) * self.block_len), pygame.USEREVENT
 
 if __name__ == "__main__":
     agent = RandomAgent()
