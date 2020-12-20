@@ -355,7 +355,7 @@ class MyAgent_3(MyAgent):
         maxii = move[lll]
         return (self.col_offset + (maxii%8) * self.block_len, self.row_offset + (maxii//8) * self.block_len), pygame.USEREVENT
 
-class MyAgent_4(MyAgent):
+class MyAgent_Tobbys(MyAgent):
     def step(self, reward, obs):#4
         sc = 1
         move_list,areas_list,steep_list = [],[],[]
@@ -490,7 +490,7 @@ class MyAgent_0(MyAgent):
         return (self.col_offset + (move[p]%8) * self.block_len, self.row_offset + (move[p]//8) * self.block_len), pygame.USEREVENT
             
 
-class MyAgent_5(MyAgent):
+class MyAgent_knaw(MyAgent):
     def step(self, reward, obs):
         move_list,areas_list,steep_list = [],[],[]
         sc = 1
