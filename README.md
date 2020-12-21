@@ -1,10 +1,10 @@
-Please use tag v3.0
+Please use tag v4.0
 
 Usage:
 
     $ git clone https://github.com/knaw0128/Mr.Crazy_Dog
     $ cd Mr.Crazy_Dog
-    $ python3 arena.py --agent1=MyAgent_knaw --agent2=RandomAgent
+    $ python3 arena.py --agent1=base_agent.MyAgent_knaw --agent2=base_agent.RandomAgent
 
 ### Team members
     - Team leader:
