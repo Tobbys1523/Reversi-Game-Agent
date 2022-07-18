@@ -2,7 +2,7 @@ Please use tag v4.0
 
 Usage:
 
-    $ git clone https://github.com/knaw0128/Mr.Crazy_Dog
+    $ git clone https://github.com/Tobbys1523/Reversi-Game-Agent
     $ cd Mr.Crazy_Dog
     $ python3 arena.py --agent1=base_agent.MyAgent_knaw --agent2=base_agent.RandomAgent
 
