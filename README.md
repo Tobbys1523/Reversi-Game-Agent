@@ -3,7 +3,7 @@ Please use tag v4.0
 Usage:
 
     $ git clone https://github.com/Tobbys1523/Reversi-Game-Agent
-    $ cd Mr.Crazy_Dog
+    $ cd Reversi-Game-Agent
     $ python3 arena.py --agent1=base_agent.MyAgent_knaw --agent2=base_agent.RandomAgent
 
 ### Team members
@@ -18,9 +18,9 @@ Usage:
 
 Report:
 
-     We choose to evaluate each point with its position 
+     We evaluate each point with its position.
      The 4 corners hold the highest piority, while the points around it hold the lowest one.
-     The points on the edge hold the second piority and the others hold the third one.
+     The points on the edge hold the second high piority and the others hold the third one.
      Our agent will pick the point with priority as high as possible.
      If more than one points hold the same priority, the agent will compare those steps,
      with which cause the opponent have the least legal moves after two steps.
