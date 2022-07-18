@@ -1,6 +1,6 @@
 Please use tag v4.0
 
-Usage:
+### Usage:
 
     $ git clone https://github.com/Tobbys1523/Reversi-Game-Agent
     $ cd Reversi-Game-Agent
@@ -16,8 +16,7 @@ Usage:
         - student_id: b09902060	
         - github: [Tobbys1523](https://github.com/Tobbys1523)
 
-Report:
-
+### Report:
      We evaluate each point with its position.
      The 4 corners hold the highest piority, while the points around it hold the lowest one.
      The points on the edge hold the second high piority and the others hold the third one.
